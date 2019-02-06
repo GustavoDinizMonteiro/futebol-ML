@@ -8,17 +8,32 @@ output: html_document
 ```{r}
 library(tidyverse)
 library(caret)
+library(broom)
 
 data = read_csv('./data.csv')
 ```
 
 ```{r}
 set.seed(1)
-data %>% sample_frac(.3) -> frac
+data %>% sample_frac(.99) -> frac
 
 frac %>% 
   filter(`corner_pct %` > .5) %>% 
   group_by(date, home, away) %>% 
-  summarise()
+  summarise(n = n(), attack_1 = mean(`dangerousAttackHome 1 tempo`) + mean(`shotsAway primeiro tempo`)) -> dataset
+  
+frac %>% 
+  filter(`corner_pct %` <= .5) %>% 
+  group_by(date, home, away) %>% 
+  summarise(coners_1 = n()) -> coners_1
+
+dataset = inner_join(dataset, coners_1, by=c('date', 'home', 'away'), all.x = TRUE)
+
+model <- lm(n ~ attack_1 + coners_1, data = dataset)
+```
+
+```{r}
+glance(model)
+model
 ```
 
